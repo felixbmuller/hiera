@@ -162,7 +162,7 @@ class MaskedAutoencoderHiera(Hiera):
         return label
 
     def get_pixel_label_3d(
-        self, input_vid: torch.Tensor, mask: torch.Tensor, norm: bool = True
+        self, input_vid: torch.Tensor, mask: torch.Tensor, norm: bool = True, return_norm: bool = False
     ) -> torch.Tensor:
         # mask (boolean tensor): True must correspond to *masked*
 
@@ -173,12 +173,20 @@ class MaskedAutoencoderHiera(Hiera):
         label = input_vid.unfold(3, size, size).unfold(4, size, size)
         label = label.permute(0, 2, 3, 4, 5, 6, 1)  # Different from 2d, mistake during training lol
         label = label.flatten(1, 3).flatten(2)
+        # permute and flatten performs
+        # rearrange(label, 'batch channels time patch_width patch_height width height 
+        #                   -> batch (time patch_width patch_height) (width height channels)')
+        #print(f'Label shape: {label.shape}')
         label = label[mask]
+        #print(f'Label shape after mask: {label.shape}')
 
         if norm:
             mean = label.mean(dim=-1, keepdim=True)
             var = label.var(dim=-1, keepdim=True)
             label = (label - mean) / (var + 1.0e-6) ** 0.5
+
+        if return_norm:
+            return label, mean, var
 
         return label
 

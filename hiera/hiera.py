@@ -28,7 +28,7 @@ import torch.nn.functional as F
 
 from timm.models.layers import DropPath, Mlp
 
-from .hiera_utils import pretrained_model, conv_nd, do_pool, do_masked_conv, Unroll, Reroll
+from .hiera_utils import pretrained_model, conv_nd, do_pool, do_masked_conv, Unroll, Reroll, log_devices
 from .hfhub import has_config, PyTorchModelHubMixin
 
 
@@ -199,6 +199,7 @@ class PatchEmbed(nn.Module):
     def forward(
         self, x: torch.Tensor, mask: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
+        #log_devices(x, mask, self.proj)
         x = do_masked_conv(x, self.proj, mask)
         x = x.reshape(x.shape[0], x.shape[1], -1).transpose(2, 1)
         return x

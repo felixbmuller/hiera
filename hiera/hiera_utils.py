@@ -22,9 +22,12 @@ import math
 from typing import List, Tuple, Optional, Type, Callable, Dict
 
 import torch
+import logging
 import torch.nn as nn
 import torch.nn.functional as F
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def pretrained_model(checkpoints: Dict[str, str], default: str = None) -> Callable:
     """ Loads a Hiera model from a pretrained source (if pretrained=True). Use "checkpoint" to specify the checkpoint. """
@@ -94,6 +97,17 @@ def get_resized_mask(target_size: torch.Size, mask: torch.Tensor) -> torch.Tenso
         return F.interpolate(mask.float(), size=target_size)
     return mask
 
+def log_devices(x: torch.Tensor, mask: Optional[torch.Tensor] = None, conv: Optional[nn.Module] = None):
+    
+    if x is not None:
+        logger.debug(f"x device: {x.device}")
+    
+    if mask is not None:
+        logger.debug(f"mask device: {mask.device}")
+    
+    if conv is not None:
+        for name, param in conv.named_parameters():
+            logger.debug(f"conv parameter {name} device: {param.device}")
 
 def do_masked_conv(
     x: torch.Tensor, conv: nn.Module, mask: Optional[torch.Tensor] = None
@@ -105,6 +119,8 @@ def do_masked_conv(
         return x
     if mask is None:
         return conv(x)
+
+    #log_devices(x, mask, conv)
 
     mask = get_resized_mask(target_size=x.shape[2:], mask=mask)
     return conv(x * mask.bool())
